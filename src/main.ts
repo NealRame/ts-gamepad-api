@@ -1,4 +1,5 @@
 import "./style.css"
+
 import setupGamePad from "./gamepad"
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
