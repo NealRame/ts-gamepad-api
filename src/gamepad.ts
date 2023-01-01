@@ -9,29 +9,27 @@ function createGamePadCard(gamepad: Gamepad): HTMLDivElement {
 
     card.classList.add("card")
     if (gamepad.id in GamePadFigure) {
-        const figure = document.createElement("figure")
         const caption = document.createElement("figcaption")
+        const svg = document.createElement("svg")
+        const figure = document.createElement("figure")
+
+        figure.appendChild(svg)
+        figure.appendChild(caption)
 
         caption.innerHTML = gamepad.id
-        figure.innerHTML = (GamePadFigure as any)[gamepad.id]
-        figure.appendChild(caption)
+        svg.outerHTML = (GamePadFigure as any)[gamepad.id]
 
         card.appendChild(figure)
     }
     return card
 }
 
-function createGamepadHandler(el: HTMLDivElement) {
+
+export default function(el: HTMLDivElement): void {
     const gamepads = new Map<number, Gamepad>()
 
-    return (event: GamepadEvent, connecting: boolean) => {
-        const gamepad = event.gamepad
-
-        if (connecting) {
-            gamepads.set(gamepad.index, gamepad)
-        } else {
-            gamepads.delete(gamepad.index)
-        }
+    const refreshGamepads = () => {
+        el.innerHTML = ""
 
         const gamepadList = document.createElement("ul")
         gamepadList.classList.add("gamepad-list")
@@ -42,13 +40,29 @@ function createGamepadHandler(el: HTMLDivElement) {
             gamepadList.appendChild(gamepadItem)
         }
 
-        el.innerHTML = ""
         el.appendChild(gamepadList)
     }
-}
 
-export default function(el: HTMLDivElement): void {
-    const gamepadHandler = createGamepadHandler(el)
-    window.addEventListener("gamepadconnected", e => gamepadHandler(e, true))
-    window.addEventListener("gamepaddisconnected", e => gamepadHandler(e, false))
+    const onGamepadConnected = ({ gamepad }: GamepadEvent) => {
+        gamepads.set(gamepad.index, gamepad)
+        refreshGamepads()
+    }
+
+    const onGamepadDisconnected = ({ gamepad }: GamepadEvent) => {
+        gamepads.delete(gamepad.index)
+        refreshGamepads()
+    }
+
+    // let animationFrameId = 0
+    // const animationFrameCallback = () => {
+    //     animationFrameId = requestAnimationFrame(animationFrameCallback)
+    //     for (const [, gamepad] of gamepads) {
+
+    //     }
+    // }
+
+    window.addEventListener("gamepadconnected", onGamepadConnected)
+    window.addEventListener("gamepaddisconnected", onGamepadDisconnected)
+
+    // animationFrameCallback()
 }
