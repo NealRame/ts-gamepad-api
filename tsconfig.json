@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
+    "sourceMap": true,
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
