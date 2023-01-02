@@ -9,4 +9,13 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
 </div>
 `
 
-setupGamePad(document.querySelector<HTMLDivElement>("#gamepads")!)
+const gamepads = setupGamePad(document.querySelector<HTMLDivElement>("#gamepads")!)
+
+gamepads
+  .start()
+  .events.on("gamepadConnected", controller => {
+    controller.events.on("buttonDown", button => {
+      console.log("buttonDown", button)
+    })
+  })
+
