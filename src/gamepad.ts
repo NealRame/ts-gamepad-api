@@ -76,20 +76,20 @@ class GamepadController implements IGamepadController {
     private axes_: TGamepadAxes
     private buttons_: Array<GamepadButton>
 
-    private valueComparator_: (a: number, b: number) => boolean
+    private equalValues_: (a: number, b: number) => boolean
 
     private axesDidChanged_(axes: number[]) {
-        return this.valueComparator_(axes[0], this.axes_[0])
-            || this.valueComparator_(axes[1], this.axes_[1])
-            || this.valueComparator_(axes[2], this.axes_[2])
-            || this.valueComparator_(axes[3], this.axes_[3])
+        return this.equalValues_(axes[0], this.axes_[0])
+            || this.equalValues_(axes[1], this.axes_[1])
+            || this.equalValues_(axes[2], this.axes_[2])
+            || this.equalValues_(axes[3], this.axes_[3])
     }
 
     private buttonDidChanged_({ pressed, value }: GamepadButton, index: number) {
         const cachedButton = this.buttons_[index]
         if (pressed) {
             return pressed !== cachedButton.pressed
-                || this.valueComparator_(value, cachedButton.value)
+                || this.equalValues_(value, cachedButton.value)
         }
         return pressed !== cachedButton.pressed
     }
@@ -104,7 +104,7 @@ class GamepadController implements IGamepadController {
 
     constructor(gamepad: Gamepad) {
         [this.emit_, this.events] = createEmitterReceiver<TGamepadEvents>()
-        this.valueComparator_ = createValueComparator()
+        this.equalValues_ = createValueComparator()
         this.axes_ = this.readAxes_(gamepad)
         this.buttons_ = this.readButtons_(gamepad)
         this.id_ = gamepad.id
