@@ -1,127 +1,164 @@
-import Dualsense from "./assets/dualsense.svg?raw"
-
 import {
-    IReceiver,
-    createEmitterReceiver
+    createEmitterReceiver,
+    type IReceiver,
+    type TEmitter,
 } from "@nealrame/ts-events"
 
-const GamePadFigure = {
-    "DualSense Wireless Controller Extended Gamepad": Dualsense,
-    "DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)": Dualsense,
+export const Axis = {
+    LeftHorizontal: 0,
+    LeftVertical: 1,
+    RightHorizontal: 2,
+    RightVertical: 3,
+} as const
+
+export type TGamepadAxes = [ number, number, number, number ]
+export type TGamepadButton = { index: number, value: number }
+
+export type TGamepadAxesEvents = {
+    axesChanged: TGamepadAxes
 }
 
-const AxisEvents = [
-    "leftHorizontalAxisChanged",
-    "leftVerticalAxisChanged",
-    "rightHorizontalAxisChanged",
-    "rightVerticalAxisChanged",
-] as const
-
-type TGamePadButtonEvents = {
-    buttonDown: number
+export type TGamepadButtonEvents = {
+    buttonDown: TGamepadButton
     buttonUp: number
 }
 
-type TGamePadAxisEvents = {
-    [key in typeof AxisEvents[number]]: number
+export type TGamepadEvents = TGamepadButtonEvents & TGamepadAxesEvents & {
+    disconnected: void
 }
 
-type TGamePadEvent = TGamePadButtonEvents & TGamePadAxisEvents
-
-type IGamePadController = {
-    refresh(): void
-    destroy(): void
-    events: IReceiver<TGamePadEvent>
+export type IGamepadController = {
+    readonly id: string
+    readonly index: number
+    readonly events: IReceiver<TGamepadEvents>
 }
 
-type TGamePadControllerEvents = {
-    gamepadConnected: IGamePadController
-    gamepadDisconnected: IGamePadController
+export type TGamepadManagerEvents = {
+    gamepadConnected: IGamepadController
 }
 
-function createGamepadController(
-    gamepadId: string,
-    gamepadIndex: number,
-    parentEl: HTMLElement,
-): IGamePadController {
-    const el = document.createElement("li")
-    const svg = document.createElement("svg")
+export type IGamepadManager = {
+    events: IReceiver<TGamepadManagerEvents>
+    gamepad(index: number): IGamepadController | undefined
+    start(): IGamepadManager
+    stop(): IGamepadManager
+}
 
-    const [emit, events] = createEmitterReceiver<TGamePadEvent>()
 
-    const state = {
-        buttons: [] as Array<boolean>,
-        axes: [] as Array<number>,
+function createValueComparator(precision: number = 0.001) {
+    return (a: number, b: number) => Math.abs(a - b) > precision
+}
+
+function createGamepadControllerView(
+    controller: IGamepadController,
+): IGamepadController {
+    return {
+        get events() {
+            return controller.events
+        },
+        get id() {
+            return controller.id
+        },
+        get index() {
+            return controller.index
+        },
+    }
+}
+
+class GamepadController implements IGamepadController {
+    public events: IReceiver<TGamepadEvents>
+
+    private emit_: TEmitter<TGamepadEvents>
+
+    private id_: string
+    private index_: number
+
+    private axes_: TGamepadAxes
+    private buttons_: Array<GamepadButton>
+
+    private valueComparator_: (a: number, b: number) => boolean
+
+    private axesDidChanged_(axes: number[]) {
+        return this.valueComparator_(axes[0], this.axes_[0])
+            || this.valueComparator_(axes[1], this.axes_[1])
+            || this.valueComparator_(axes[2], this.axes_[2])
+            || this.valueComparator_(axes[3], this.axes_[3])
     }
 
-    const refresh = () => {
+    private buttonDidChanged_({ pressed, value }: GamepadButton, index: number) {
+        const cachedButton = this.buttons_[index]
+        if (pressed) {
+            return pressed !== cachedButton.pressed
+                || this.valueComparator_(value, cachedButton.value)
+        }
+        return pressed !== cachedButton.pressed
+    }
+
+    private readAxes_({ axes }: Gamepad) {
+        return Array.from(axes) as TGamepadAxes
+    }
+
+    private readButtons_({ buttons }: Gamepad) {
+        return Array.from(buttons)
+    }
+
+    constructor(gamepad: Gamepad) {
+        [this.emit_, this.events] = createEmitterReceiver<TGamepadEvents>()
+        this.valueComparator_ = createValueComparator()
+        this.axes_ = this.readAxes_(gamepad)
+        this.buttons_ = this.readButtons_(gamepad)
+        this.id_ = gamepad.id
+        this.index_ = gamepad.index
+    }
+
+    public get id() {
+        return this.id_
+    }
+
+    public get index() {
+        return this.index_
+    }
+
+    public refresh() {
         const gamepads = navigator.getGamepads()
-        const gamepad = gamepads[gamepadIndex]
+        const gamepad = gamepads[this.index_]
 
         if (gamepad == null) return
 
-        gamepad.buttons.forEach((button, index) => {
-            if (button.pressed !== state.buttons[index]) {
-                emit(button.pressed ? "buttonDown" : "buttonUp", index)
+        this.readButtons_(gamepad).forEach((button, index) => {
+            if (this.buttonDidChanged_(button, index)) {
+                this.buttons_[index] = button
+                if (button.pressed) {
+                    this.emit_("buttonDown", { index, value: button.value })
+                } else {
+                    this.emit_("buttonUp", index)
+                }
             }
         })
 
-        gamepad.axes.forEach((value, index) => {
-            if (value !== state.axes[index]) {
-                emit(AxisEvents[index], value)
-            }
-        })
-
-        state.buttons = gamepad.buttons.map(button => button.pressed)
-        state.axes = Array.from(gamepad.axes)
+        const currentAxes = this.readAxes_(gamepad)
+        if (this.axesDidChanged_(currentAxes)) {
+            this.axes_ = currentAxes
+            this.emit_("axesChanged", currentAxes)
+        }
     }
 
-    const destroy = () => {
-        events.off()
-        el.remove()
-    }
-
-    el.classList.add("card")
-    if (gamepadId in GamePadFigure) {
-        const caption = document.createElement("figcaption")
-        const figure = document.createElement("figure")
-
-        figure.appendChild(svg)
-        figure.appendChild(caption)
-
-        caption.innerHTML = gamepadId
-        svg.outerHTML = (GamePadFigure as any)[gamepadId]
-
-        el.appendChild(figure)
-    }
-
-    parentEl.appendChild(el)
-
-    return {
-        refresh,
-        destroy,
-        events,
-        
+    public destroy() {
+        this.id_ = ""
+        this.index_ = -1
+        this.emit_("disconnected")
+        this.events.off()
     }
 }
 
-export default function(el: HTMLDivElement) {
-    const gamepads = new Map<number, IGamePadController>()
-    const gamepadListView = document.createElement("ul")
-
-    const [emit, events] = createEmitterReceiver<TGamePadControllerEvents>()
-
-    gamepadListView.classList.add("gamepad-list")
-    el.appendChild(gamepadListView)
+export function createGamepadManager(): IGamepadManager {
+    const gamepads = new Map<number, GamepadController>()
+    const [emit, events] = createEmitterReceiver<TGamepadManagerEvents>()
 
     const onGamepadConnected = ({ gamepad }: GamepadEvent) => {
-        const controller = createGamepadController(
-            gamepad.id,
-            gamepad.index,
-            gamepadListView
-        )
+        const controller = new GamepadController(gamepad)
         gamepads.set(gamepad.index, controller)
-        emit("gamepadConnected", controller)
+        emit("gamepadConnected", createGamepadControllerView(controller))
     }
 
     const onGamepadDisconnected = ({ gamepad }: GamepadEvent) => {
@@ -129,7 +166,6 @@ export default function(el: HTMLDivElement) {
         if (controller != null) {
             controller.destroy()
             gamepads.delete(gamepad.index)
-            emit("gamepadDisconnected", controller)
         }
     }
 
@@ -144,16 +180,22 @@ export default function(el: HTMLDivElement) {
     return {
         events,
         gamepad(index: number) {
-            return gamepads.get(index)
+            const controller = gamepads.get(index)
+            if (controller != null) {
+                return createGamepadControllerView(controller)
+            }
+            return controller
         },
         start() {
             window.addEventListener("gamepadconnected", onGamepadConnected)
+            window.addEventListener("gamepaddisconnected", onGamepadDisconnected)
             animationFrameCallback()
             return this
         },
         stop() {
-            window.addEventListener("gamepaddisconnected", onGamepadDisconnected)
             cancelAnimationFrame(animationFrameId)
+            window.removeEventListener("gamepadconnected", onGamepadConnected)
+            window.removeEventListener("gamepaddisconnected", onGamepadDisconnected)
             return this
         },
     }
