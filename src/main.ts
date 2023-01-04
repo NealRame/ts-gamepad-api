@@ -33,7 +33,16 @@ function createGameView(
     }
 
     gamepad.events.on("disconnected", () => el.remove())
-
+    gamepad.events.on("buttonDown", button => {
+        console.log("button down", button.index, button.value)
+    })
+    gamepad.events.on("buttonUp", button => {
+        console.log("button up", button)
+    })
+    gamepad.events.on("axesChanged", axes => {
+        console.log("axes changed", axes)
+    })
+    
     return el
 }
 
@@ -52,13 +61,4 @@ gamepadManager
     .start()
     .events.on("gamepadConnected", gamepad => {
         gamepadsListView.appendChild(createGameView(gamepad))
-        gamepad.events.on("buttonDown", button => {
-            console.log("button down", button.index, button.value)
-        })
-        gamepad.events.on("buttonUp", button => {
-            console.log("button up", button)
-        })
-        gamepad.events.on("axesChanged", axes => {
-            console.log("axes changed", axes)
-        })
     })
