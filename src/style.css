@@ -47,16 +47,24 @@ h1 {
   text-align: center;
 }
 
-.gamepad-list {
+#gamepads {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.card {
+#gamepads > li {
   padding: 2em;
 }
 
+svg path {
+    fill: currentColor;
+    stroke: currentColor;
+}
+svg path.active {
+    fill: #1e56fe;
+    stroke: #1e56fe;
+}
 
 @media (prefers-color-scheme: light) {
   :root {

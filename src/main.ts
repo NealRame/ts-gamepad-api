@@ -16,12 +16,11 @@ function createGameView(
     gamepad: IGamepadController,
 ): HTMLElement {
     const el = document.createElement("li")
-    const svg = document.createElement("svg")
 
-    el.classList.add("card")
     if (gamepad.id in GamePadFigures) {
         const caption = document.createElement("figcaption")
         const figure = document.createElement("figure")
+        const svg = document.createElement("svg")
 
         figure.appendChild(svg)
         figure.appendChild(caption)
@@ -32,17 +31,25 @@ function createGameView(
         el.appendChild(figure)
     }
 
+    const svg = el.querySelector("svg")!
+
     gamepad.events.on("disconnected", () => el.remove())
     gamepad.events.on("buttonDown", button => {
+        const buttonId = `#button-${button.index}`
+        const buttonEl = svg.querySelector(buttonId)
+        if (buttonEl != null) {
+            buttonEl.classList.add("active")
+        }
         console.log("button down", button.index, button.value)
     })
     gamepad.events.on("buttonUp", button => {
+        svg.querySelector(`#button-${button}`)?.classList.remove("active")
         console.log("button up", button)
     })
-    gamepad.events.on("axesChanged", axes => {
-        console.log("axes changed", axes)
-    })
-    
+    // gamepad.events.on("axesChanged", axes => {
+    //     console.log("axes changed", axes)
+    // })
+
     return el
 }
 
