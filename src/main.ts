@@ -10,6 +10,7 @@ import "./style.css"
 const GamePadFigures = {
     "DualSense Wireless Controller Extended Gamepad": Dualsense,
     "DualSense Wireless Controller (STANDARD GAMEPAD Vendor: 054c Product: 0ce6)": Dualsense,
+    "54c-ce6-DualSense Wireless Controller": Dualsense,
 }
 
 function createGameView(
