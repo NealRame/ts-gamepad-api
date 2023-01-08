@@ -1,13 +1,33 @@
 {
-  "name": "gamepad-api",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "@nealrame/ts-gamepad-api",
+  "version": "0.1.0",
+  "description": "A TypeScript library for the Gamepad API",
+  "main": "./dist/index.js",
+  "files": [
+    "dist/**/*",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "./scripts/build.sh",
+    "clean": "./scripts/clean.sh",
+    "dev": "vite src/tests/app"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NealRame/ts-gamepad-api.git"
+  },
+  "keywords": [
+    "gamepad",
+    "gamepad api",
+    "typescript"
+  ],
+  "author": "Julien Graziano <julien@graziano.fr>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NealRame/ts-gamepad-api/issues"
+  },
+  "homepage": "https://github.com/NealRame/ts-gamepad-api#readme",
   "devDependencies": {
     "typescript": "^4.9.3",
     "vite": "^4.0.0"

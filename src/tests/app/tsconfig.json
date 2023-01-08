@@ -17,5 +17,9 @@
     "noImplicitReturns": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
 }

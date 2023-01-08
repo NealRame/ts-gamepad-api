@@ -1,9 +1,9 @@
-import Dualsense from "./assets/dualsense.svg?raw"
-
 import {
     type IGamepadController,
     createGamepadManager,
-} from "./gamepad"
+} from "../../lib"
+
+import Dualsense from "./assets/dualsense.svg?raw"
 
 import "./style.css"
 
