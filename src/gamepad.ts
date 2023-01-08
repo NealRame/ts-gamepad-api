@@ -4,20 +4,8 @@ import {
     type TEmitter,
 } from "@nealrame/ts-events"
 
-export const GamepadAxis = {
-    LeftHorizontal: 0,
-    LeftVertical: 1,
-    RightHorizontal: 2,
-    RightVertical: 3,
-} as const
-
-export type TGamepadAxis = typeof GamepadAxis[keyof typeof GamepadAxis]
-export type TGamepadAxes = [ number, number, number, number ]
-
-export type TGamepadButton = {
-    pressed: boolean
-    value: number
-}
+export type TGamepadAxis = readonly number[]
+export type TGamepadButtons = readonly GamepadButton[]
 
 export type TGamepadEvents = {
     buttonDown: number
@@ -26,8 +14,8 @@ export type TGamepadEvents = {
 }
 
 export type IGamepadController = {
-    readonly axes: TGamepadAxes
-    readonly buttons: Array<TGamepadButton>
+    readonly axes: TGamepadAxis | null
+    readonly buttons: TGamepadButtons | null
     readonly id: string
     readonly index: number
     readonly events: IReceiver<TGamepadEvents>
@@ -82,15 +70,20 @@ class GamepadController implements IGamepadController {
     private index_: number
 
     private config_: TGameControllerConfig
-    private axes_: TGamepadAxes
-    private buttons_: Array<TGamepadButton>
+    private buttonsState_: Array<boolean>
 
-    private readAxes_({ axes }: Gamepad) {
-        return Array.from(axes) as TGamepadAxes
+    private readAxes_(gamepad: Gamepad | null | undefined) {
+        return gamepad?.axes ?? null
     }
 
-    private readButtons_({ buttons }: Gamepad) {
-        return buttons.map(({ pressed, value }) => ({ pressed, value }))
+    private readButtons_(gamepad: Gamepad | null | undefined) {
+        return gamepad?.buttons ?? null
+    }
+
+    private updateButtonsState_(gamepad: Gamepad | null | undefined) {
+        (gamepad?.buttons ?? []).forEach((button, index) => {
+            this.buttonsState_[index] = button.pressed
+        })
     }
 
     constructor(
@@ -100,8 +93,7 @@ class GamepadController implements IGamepadController {
         this.config_ = config
         this.id_ = gamepad.id
         this.index_ = gamepad.index
-        this.axes_ = this.readAxes_(gamepad)
-        this.buttons_ = this.readButtons_(gamepad)
+        this.buttonsState_ = []
         ;[this.emit_, this.events] = createEmitterReceiver<TGamepadEvents>()
     }
 
@@ -114,33 +106,31 @@ class GamepadController implements IGamepadController {
     }
 
     public get axes() {
-        return this.axes_.slice() as TGamepadAxes
+        const gamepads = navigator.getGamepads()
+        const gamepad = gamepads[this.index_]
+        return this.readAxes_(gamepad)
     }
 
     public get buttons() {
-        return this.buttons_.slice() as Array<TGamepadButton>
+        const gamepads = navigator.getGamepads()
+        const gamepad = gamepads[this.index_]
+        return this.readButtons_(gamepad)
     }
 
     public refresh() {
         const gamepads = navigator.getGamepads()
         const gamepad = gamepads[this.index_]
 
-        if (gamepad == null) return
-
-        const lastButtons = this.buttons_
-
-        this.axes_ = this.readAxes_(gamepad)
-
-        this.buttons_ = this.readButtons_(gamepad)
-        this.buttons_.forEach((button, index) => {
+        ;(this.readButtons_(gamepad) ?? []).forEach((button, index) => {
             if (button.pressed) {
-                if (this.config_.multiple || !lastButtons[index].pressed) {
+                if (this.config_.multiple || !this.buttonsState_[index]) {
                     this.emit_("buttonDown", index)
                 }
-            } else if (lastButtons[index].pressed) {
+            } else if (this.buttonsState_[index]) {
                 this.emit_("buttonUp", index)
             }
         })
+        ;this.updateButtonsState_(gamepad)
     }
 
     public destroy() {
