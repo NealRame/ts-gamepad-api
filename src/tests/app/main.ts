@@ -3,7 +3,7 @@ import {
     createGamepadManager,
 } from "../../lib"
 
-import Dualsense from "./assets/dualsense.svg?raw"
+import Dualsense from "./assets/ps5-dualsense.svg?raw"
 
 import "./style.css"
 
@@ -38,16 +38,16 @@ function createGamepadView(
     gamepad.events.on("buttonDown", buttonIndex => {
         if (svg == null) return
         const buttonId = `#button-${buttonIndex}`
-        const buttonEl = svg.querySelector(buttonId)
-        if (buttonEl != null) {
-            buttonEl.classList.add("active")
-        }
+        const buttonEl = svg.querySelectorAll(buttonId)
+        buttonEl.forEach(el => el.classList.add("active"))
         console.log("button down", buttonIndex)
     })
-    gamepad.events.on("buttonUp", button => {
+    gamepad.events.on("buttonUp", buttonIndex => {
         if (svg == null) return
-        svg.querySelector(`#button-${button}`)?.classList.remove("active")
-        console.log("button up", button)
+        const buttonId = `#button-${buttonIndex}`
+        const buttonEl = svg.querySelectorAll(buttonId)
+        buttonEl.forEach(el => el.classList.remove("active"))
+        console.log("button up", buttonIndex)
     })
 
     return el

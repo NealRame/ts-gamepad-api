@@ -57,13 +57,14 @@ h1 {
   padding: 2em;
 }
 
+svg circle,
 svg path {
-    fill: currentColor;
+    fill: none;
     stroke: currentColor;
 }
+svg circle.active,
 svg path.active {
-    fill: #1e56fe;
-    stroke: #1e56fe;
+    fill: #0088ff;
 }
 
 @media (prefers-color-scheme: light) {
