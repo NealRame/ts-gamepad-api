@@ -40,14 +40,12 @@ function createGamepadView(
         const buttonId = `#button-${buttonIndex}`
         const buttonEl = svg.querySelectorAll(buttonId)
         buttonEl.forEach(el => el.classList.add("active"))
-        console.log("button down", buttonIndex)
     })
     gamepad.events.on("buttonUp", buttonIndex => {
         if (svg == null) return
         const buttonId = `#button-${buttonIndex}`
         const buttonEl = svg.querySelectorAll(buttonId)
         buttonEl.forEach(el => el.classList.remove("active"))
-        console.log("button up", buttonIndex)
     })
 
     return el
