@@ -181,6 +181,9 @@ export function createGamepadManager(options: TGamepadManagerOptions = {}): IGam
         start() {
             window.addEventListener("gamepadconnected", onGamepadConnected)
             window.addEventListener("gamepaddisconnected", onGamepadDisconnected)
+            navigator.getGamepads()
+                .filter(gamepad => gamepad != null && !gamepads.has(gamepad.index))
+                .forEach(gamepad => onGamepadConnected({ gamepad } as GamepadEvent))
             return this
         },
         stop() {
