@@ -63,7 +63,7 @@ function createGamepadControllerView(
 
 class GamepadController implements IGamepadController {
     public events: IReceiver<TGamepadEvents>
-    
+
     private emit_: TEmitter<TGamepadEvents>
 
     private id_: string
