@@ -11,7 +11,8 @@
   "scripts": {
     "build": "./scripts/build.sh",
     "clean": "./scripts/clean.sh",
-    "dev": "vite src/tests/app"
+    "dev": "vite src/tests/app",
+    "test": "./scripts/test-unit.sh"
   },
   "repository": {
     "type": "git",
